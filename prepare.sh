@@ -3,7 +3,7 @@
 if [ "$EUID" -eq 0 ]; then
     
     echo "Installing required packages"
-    apt install nginx python3 python3-venv python3-pil mingw-w64
+    apt install nginx python3 python3-venv python3-pil mingw-w64-common
     
     echo "Compiling process creator"
     x86_64-w64-mingw32-gcc runner.c -o runner.exe -mwindows
