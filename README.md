@@ -13,11 +13,12 @@ ScreenSpy is a repository that contains followings:
    -   stager.ps1 - stager powershell script that badusb runs from url
    -   prepare.sh - prepares server.
    -   client.exe - compiler version of client.py 
+   -   runner.exe - to run client.exe as background process 
    -   nginx.conf - nginx web server config
 
 NOTE!: This program tested on Windows10, Linux(X11) and there no guarantee that will work for other OSs.
 
-#### Compile python scrip to executable
+#### Compile python script to executable
 In order to compile *client.py* script for linux(X11) or Windows:
 ```bash
 git clone https://github.com/Cyb3rCr0wCC/ScreenSpy
@@ -48,27 +49,7 @@ bash prepare.sh
 
 Manual (root):
 
-``````bash
-# Install required packages
-apt install nginx python3 python3-venv python3-pil
-# You dont need following three steps if you installed python3-pil via apt
-python3 -m venv venv
-source venv/bin/activate
-pip3 install -r requirements.txt
-
-# Copy our stager.ps1 powershell script to our webroot that will served via nginx to install our client.exe or client malware into victims machine
-cp stager.ps1 /var/www/html
-
-# Copy compiled client.py to webroot 2>/dev/null means ignore file not exist error 
-cp client.exe /var/www/html 2>/dev/null
-cp client     /var/www/html 2>/dev/null
-
-# Copy nginx.conf webserver config
-cp nginx.conf /etc/nginx/conf.d/screenspy.conf
-
-# Restart webserver and we will ready to go
-systemctl restart nginx
-``````
+you can check prepare.sh commands
 
 
 
@@ -81,4 +62,44 @@ I used Arduino as a Ide to compile and upload *scrennshareStager.ino* code into 
 I used Atmega32U4  as my BadUsb.
 
 You can download arduino release from this: [arduino](https://www.arduino.cc/en/software)
+
+Open up arduino and paste code inside *"scrennshareStager.ino"*
+
+
+
+#### Compile client.py 
+
+You need to use same os as your target's machine and run following commnad:
+
+``````powershell
+pyinstaller client.py --onefile
+``````
+
+Then after getting compiled binary (**windows**: client.exe; **linux** - client) copy that file into your server's webroot (**default**-/var/www/html)
+
+
+
+#### Your are ready:
+
+Both your server and your badusb are ready to operate.
+
+Run your server program(***on you server machine***):
+
+``````
+python3 server.py
+``````
+
+Then plug your badusb into your target machine
+
+after few seconds your stager powershell script will run.
+
+
+
+### Conclusion
+
+Developing tools that interact with security products like AV, EDR, and firewalls is an ongoing challenge. While I strive to **obfuscate** and adapt these codes to bypass the latest versions of such software, there's no absolute guarantee of universal bypass due to continuous advancements in security products.
+
+------
+
+I am committed to enhancing these programs, and this repository is **open for contributions** from anyone who wishes to help make them more robust and effective. Your insights and efforts are highly valued!
 

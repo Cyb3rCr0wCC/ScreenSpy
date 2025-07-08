@@ -11,7 +11,7 @@ import sys
 
 # --- Configuration ---
 HOST = '0.0.0.0'  # Listen on all available interfaces
-PORT = 1234      # Port to listen on
+PORT = 5555      # Port to listen on
 
 # --- Global Variables ---
 root = None

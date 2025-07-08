@@ -1,1 +1,4 @@
 venv/
+a.exe
+*.bin
+*.exe
