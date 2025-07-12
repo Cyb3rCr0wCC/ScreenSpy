@@ -7,21 +7,21 @@
 // Base64 character set
 const char *base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+void encryptDecrypt(char *input, char *output, size_t length) {
+    char key[] = {'K', 'C', 'Q', 'B', 'H'}; //Can be any chars, and any size array
+    size_t key_len = sizeof(key)/sizeof(char);
 
-void encryptDecrypt(char *input, char *output) {
-	char key[] = {'K', 'C', 'Q', 'B', 'H'}; //Can be any chars, and any size array
-	
-	int i;
-	for(i = 0; i < strlen(input); i++) {
-		output[i] = input[i] ^ key[i % (sizeof(key)/sizeof(char))];
-	}
+    for(size_t i = 0; i < length; i++) {
+        output[i] = input[i] ^ key[i % key_len];
+    }
+    // No need to null-terminate here, as the caller (Encrypt/Decode) will do it if needed for a string.
 }
 
 
 // Function to encode a binary buffer into Base64
 char *base64_encode(const unsigned char *data, size_t input_length) {
     size_t output_length = 4 * ((input_length + 2) / 3);
-    char *encoded_data = (char *)malloc(output_length + 1);
+    char *encoded_data = (char *)malloc(output_length + 1); // +1 for null terminator
     if (encoded_data == NULL) {
         return NULL; // Memory allocation failed
     }
@@ -44,8 +44,14 @@ char *base64_encode(const unsigned char *data, size_t input_length) {
     }
 
     // Handle padding and null-terminate the encoded string
-    while (output_length > 0 && encoded_data[output_length - 1] == '=') {
-        output_length--;
+    // The loop condition should be `output_length` after the padding characters are potentially added.
+    // The current loop below removes padding, but base64_decode expects padding to exist for correct length calculation sometimes.
+    // For simplicity and correct decoding, we'll keep the padding characters ('=') and just null-terminate at the calculated output_length.
+    if (input_length % 3 == 1) {
+        encoded_data[output_length - 2] = '=';
+        encoded_data[output_length - 1] = '=';
+    } else if (input_length % 3 == 2) {
+        encoded_data[output_length - 1] = '=';
     }
     encoded_data[output_length] = '\0';
 
@@ -56,11 +62,13 @@ char *base64_encode(const unsigned char *data, size_t input_length) {
 unsigned char *base64_decode(const char *input, size_t *output_length) {
     size_t input_length = strlen(input);
     if (input_length % 4 != 0) {
-        return NULL; // Invalid Base64 input length
+        // Base64 string must have a length that is a multiple of 4
+        // (after removing whitespace if any, which this simple function doesn't handle)
+        return NULL;
     }
 
     // Calculate the expected output length
-    *output_length = (3 * input_length) / 4;
+    *output_length = (input_length / 4) * 3;
     if (input[input_length - 1] == '=') {
         (*output_length)--;
     }
@@ -69,77 +77,88 @@ unsigned char *base64_decode(const char *input, size_t *output_length) {
     }
 
     // Allocate memory for the decoded data
-    unsigned char *decoded_data = (unsigned char *)malloc(*output_length);
+    unsigned char *decoded_data = (unsigned char *)malloc(*output_length + 1); // +1 for potential null terminator if treated as string
     if (decoded_data == NULL) {
         return NULL; // Memory allocation failed
     }
 
-    // Initialize variables for decoding process
-    size_t j = 0;
-    uint32_t sextet_bits = 0;
-    int sextet_count = 0;
-
-    // Loop through the Base64 input and decode it
-    for (size_t i = 0; i < input_length; i++) {
-        // Convert Base64 character to a 6-bit value
-        uint32_t base64_value = 0;
-        if (input[i] == '=') {
-            base64_value = 0;
-        } else {
-            const char *char_pointer = strchr(base64_chars, input[i]);
-            if (char_pointer == NULL) {
+    size_t j = 0; // Index for decoded_data
+    for (size_t i = 0; i < input_length; i += 4) {
+        uint32_t val = 0;
+        for (int k = 0; k < 4; k++) {
+            char c = input[i + k];
+            const char *char_pointer = strchr(base64_chars, c);
+            if (c == '=') {
+                val = (val << 6); // Padding, effectively 0 for the 6 bits
+            } else if (char_pointer != NULL) {
+                val = (val << 6) | (char_pointer - base64_chars);
+            } else {
                 free(decoded_data);
                 return NULL; // Invalid Base64 character
             }
-            base64_value = char_pointer - base64_chars;
         }
-
-        // Combine 6-bit values into a 24-bit sextet
-        sextet_bits = (sextet_bits << 6) | base64_value;
-        sextet_count++;
-
-        // When a sextet is complete, decode it into three bytes
-        if (sextet_count == 4) {
-            decoded_data[j++] = (sextet_bits >> 16) & 0xFF;
-            decoded_data[j++] = (sextet_bits >> 8) & 0xFF;
-            decoded_data[j++] = sextet_bits & 0xFF;
-            sextet_bits = 0;
-            sextet_count = 0;
+        decoded_data[j++] = (val >> 16) & 0xFF;
+        if (input[i+2] != '=') { // Only add second byte if not padded with two '='
+            decoded_data[j++] = (val >> 8) & 0xFF;
+        }
+        if (input[i+3] != '=') { // Only add third byte if not padded with one '='
+            decoded_data[j++] = val & 0xFF;
         }
     }
+    decoded_data[j] = '\0'; // Null-terminate the decoded binary data
 
     return decoded_data;
 }
 
 char* Encrypt(char* input){
-    char *output = NULL;
-    char *ciphertext = NULL;
+    char *xored_output = NULL;
+    char *ciphertext_b64 = NULL;
 
     size_t input_length = strlen(input);
-    
-    // Allocate memory for the XORed output. In a simple XOR, the output size is the same as the input.
-    output = (char *)malloc(input_length + 1);
-    encryptDecrypt(input, output);
 
-    // Base64 encode the ciphertext
-    ciphertext = base64_encode((const unsigned char *)output, input_length);
-    free(output);
-    return ciphertext;
-    //free(ciphertext);
+    // Allocate memory for the XORed output. The output size is the same as the input.
+    xored_output = (char *)malloc(input_length + 1); // +1 for null terminator if needed, though not used by encryptDecrypt directly
+    if (xored_output == NULL) {
+        return NULL; // Memory allocation failed
+    }
 
+    // Perform XOR encryption
+    encryptDecrypt(input, xored_output, input_length);
+
+    // Base64 encode the XORed data (which is now binary data)
+    // The base64_encode function expects unsigned char* for its data input.
+    ciphertext_b64 = base64_encode((const unsigned char *)xored_output, input_length);
+
+    free(xored_output); // Free the temporary XORed buffer
+
+    return ciphertext_b64; // Caller is responsible for freeing this memory
 }
 
 char* Decode(char* input){
     char *plaintext = NULL;
+    size_t decoded_b64_length; // This will be the actual length of the binary data after Base64 decoding
+    unsigned char *decoded_b64_output = base64_decode(input, &decoded_b64_length);
 
-    size_t decoded_length;
-    unsigned char *decoded_output = base64_decode(input, &decoded_length);
+    if (decoded_b64_output == NULL) {
+        return NULL; // Handle base64_decode errors (e.g., invalid input)
+    }
 
     // Allocate memory for the plaintext (after XOR decryption).
-    plaintext = (char *)malloc(decoded_length + 1);
-    encryptDecrypt((char *)decoded_output, plaintext);
+    // The size should be exactly what base64_decode returned as `decoded_b64_length` plus one for the null terminator.
+    plaintext = (char *)malloc(decoded_b64_length + 1);
+    if (plaintext == NULL) {
+        free(decoded_b64_output);
+        return NULL; // Handle memory allocation failure
+    }
 
-    free(decoded_output);
+    // Perform XOR decryption on the decoded Base64 data.
+    // The length passed to encryptDecrypt must be `decoded_b64_length`.
+    encryptDecrypt((char *)decoded_b64_output, plaintext, decoded_b64_length);
 
-    return plaintext;
+    // CRITICAL FIX: Null-terminate the plaintext string
+    plaintext[decoded_b64_length] = '\0';
+
+    free(decoded_b64_output); // Free the temporary decoded Base64 buffer
+
+    return plaintext; // Caller is responsible for freeing this memory
 }
