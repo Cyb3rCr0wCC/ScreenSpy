@@ -7,13 +7,14 @@ We need three machine in order to run this attack:
 - **Victim** ->  This is our Victim machine which we will infect and capture screen real time. 
 
 ScreenSpy is a repository that contains followings:
-   -   client.py - malware that connect to server to share its screen real time
-   -   server.py - server waiting for incoming connection.
-   -   screenshareStage.ino - arduino code to prepare stager BadUsb
-   -   stager.ps1 - stager powershell script that badusb runs from url
-   -   prepare.sh - prepares server.
-   -   client.exe - compiler version of client.py 
-   -   runner.exe - to run client.exe as background process 
+   -   helper/helper.c - code to encrypt and decrypt. e.g: *helper.bin encode/decode <string>*
+   -   scripts/change.sh - bash script to change parameters like hostnames, port numbers ... from source codes before compiling.
+   -   scripts/prepare.sh - prepares the server.
+   -   src/client.py - malware that connect to server to share its screen real time
+   -   src/server.py - server waiting for incoming connection.
+   -   src/runner.exe - to run client.exe as background process 
+   -   src//stager/screenshareStage.ino - arduino code to prepare stager BadUsb
+   -   src/stager/stager.ps1 - stager powershell script that badusb runs from url
    -   nginx.conf - nginx web server config
 
 NOTE!: This program tested on Windows10, Linux(X11) and there no guarantee that will work for other OSs.
@@ -29,11 +30,12 @@ pyinstaller ./client.py --onefile
 
 After running above commands you will get folder named *dist*, this contian our executable.
 
-Copy your compiled executable to your **Server** work folder where all that repo cloned.
+Copy your compiled executable to your **Server** builds folder in your cloned repo.
 
 ``````bash
 git clone https://github.com/Cyb3rCr0wCC/ScreenSpy
 cd ScreenSpy
+mkdir builds
 ### Copy compiled client.py to there
 ``````
 
@@ -44,6 +46,8 @@ There are two options you can prepare your **Server** for this attack
 Automated:
 
 ``````bash
+cd scripts
+bash change.sh -h <server_Ip> -p <port>
 bash prepare.sh	
 ``````
 
@@ -57,7 +61,7 @@ you can check prepare.sh commands
 
 Last step is preparing our BadUsb that will do all the job when plugged into victim's computer. 
 
-I used Arduino as a Ide to compile and upload *scrennshareStager.ino* code into our BadUsb.
+I used Arduino as a Ide to compile and upload *src/stager/scrennshareStager.ino* code into our BadUsb.
 
 I used Atmega32U4  as my BadUsb.
 
